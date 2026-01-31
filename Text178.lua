@@ -1,5 +1,5 @@
 -- ===============================
--- ESP HIGHLIGHT JUGADORES (FIXED)
+-- ESP HIGHLIGHT PARA JUGADORES + TOGGLE
 -- ===============================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -8,72 +8,75 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 
+-- Colores y transparencia
 local FILL_COLOR = Color3.fromRGB(0,255,0)
 local FILL_TRANSPARENCY = 0.5
 local OUTLINE_COLOR = Color3.fromRGB(0,255,0)
 local OUTLINE_TRANSPARENCY = 0
 
+-- Tabla para guardar highlights
 local ESPTable = {}
 
--- Toggle automático por ejecución
-_G.ESP_Toggle = not _G.ESP_Toggle
+-- Toggle global
+_G.ESP_Toggle = true
 
--- ===== Crear o actualizar ESP =====
+-- Función para aplicar highlight a un personaje
 local function aplicarESP(character)
     if not character then return end
 
-    local highlight = ESPTable[character]
-
-    if not highlight then
-        highlight = Instance.new("Highlight")
+    if not ESPTable[character] then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = character
         highlight.FillColor = FILL_COLOR
         highlight.FillTransparency = FILL_TRANSPARENCY
         highlight.OutlineColor = OUTLINE_COLOR
         highlight.OutlineTransparency = OUTLINE_TRANSPARENCY
         highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        highlight.Enabled = _G.ESP_Toggle
         highlight.Parent = CoreGui
 
         ESPTable[character] = highlight
-    end
-
-    highlight.Adornee = character
-    highlight.Enabled = _G.ESP_Toggle
-end
-
--- ===== Limpiar ESP al morir =====
-local function limpiarESP(character)
-    local highlight = ESPTable[character]
-    if highlight then
-        highlight.Enabled = false
-        highlight.Adornee = nil
-        ESPTable[character] = nil
+    else
+        -- Solo actualizar toggle
+        ESPTable[character].Enabled = _G.ESP_Toggle
     end
 end
 
--- ===== Setup jugador =====
-local function setupPlayer(plr)
-    if plr == LocalPlayer then return end
-
-    plr.CharacterAdded:Connect(aplicarESP)
-    plr.CharacterRemoving:Connect(limpiarESP)
-
-    if plr.Character then
-        aplicarESP(plr.Character)
-    end
-end
-
--- Inicial
+-- Configurar todos los jugadores actuales
 for _, plr in pairs(Players:GetPlayers()) do
-    setupPlayer(plr)
+    if plr ~= LocalPlayer then
+        plr.CharacterAdded:Connect(aplicarESP)
+        if plr.Character then
+            aplicarESP(plr.Character)
+        end
+    end
 end
 
-Players.PlayerAdded:Connect(setupPlayer)
+-- Detectar jugadores nuevos
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= LocalPlayer then
+        plr.CharacterAdded:Connect(aplicarESP)
+        if plr.Character then
+            aplicarESP(plr.Character)
+        end
+    end
+end)
 
--- ===== Toggle manual opcional =====
+-- Limpiar highlights al salir
+Players.PlayerRemoving:Connect(function(plr)
+    if plr.Character and ESPTable[plr.Character] then
+        ESPTable[plr.Character]:Destroy()
+        ESPTable[plr.Character] = nil
+    end
+end)
+
+-- ===== Función toggle =====
 function ToggleESP()
     _G.ESP_Toggle = not _G.ESP_Toggle
-    for char, highlight in pairs(ESPTable) do
+    for _, highlight in pairs(ESPTable) do
         highlight.Enabled = _G.ESP_Toggle
-        highlight.Adornee = char
     end
 end
+
+-- EJEMPLO: ToggleESP() para activar/desactivar
+-- ToggleESP()
