@@ -8,23 +8,21 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 
--- Colores y transparencia
-local FILL_COLOR = Color3.fromRGB(0,255,0)
+-- Color y transparencia
+local FILL_COLOR = Color3.fromRGB(0, 255, 0)
 local FILL_TRANSPARENCY = 0.5
-local OUTLINE_COLOR = Color3.fromRGB(0,255,0)
+local OUTLINE_COLOR = Color3.fromRGB(0, 255, 0)
 local OUTLINE_TRANSPARENCY = 0
 
--- Tabla para guardar highlights
+-- Tabla para guardar los highlights aplicados
 local ESPTable = {}
 
 -- Toggle global
-_G.ESP_Toggle = true
+_G.ESP_Toggle = not _G.ESP_Toggle
 
--- Función para aplicar highlight a un personaje
+-- Función para aplicar o actualizar ESP a un personaje
 local function aplicarESP(character)
-    if not character then return end
-
-    if not ESPTable[character] then
+    if character and not ESPTable[character] then
         local highlight = Instance.new("Highlight")
         highlight.Adornee = character
         highlight.FillColor = FILL_COLOR
@@ -34,15 +32,13 @@ local function aplicarESP(character)
         highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         highlight.Enabled = _G.ESP_Toggle
         highlight.Parent = CoreGui
-
         ESPTable[character] = highlight
-    else
-        -- Solo actualizar toggle
+    elseif character and ESPTable[character] then
         ESPTable[character].Enabled = _G.ESP_Toggle
     end
 end
 
--- Configurar todos los jugadores actuales
+-- Aplicar ESP a todos los jugadores actuales
 for _, plr in pairs(Players:GetPlayers()) do
     if plr ~= LocalPlayer then
         plr.CharacterAdded:Connect(aplicarESP)
@@ -62,21 +58,13 @@ Players.PlayerAdded:Connect(function(plr)
     end
 end)
 
--- Limpiar highlights al salir
-Players.PlayerRemoving:Connect(function(plr)
-    if plr.Character and ESPTable[plr.Character] then
-        ESPTable[plr.Character]:Destroy()
-        ESPTable[plr.Character] = nil
-    end
-end)
-
--- ===== Función toggle =====
+-- ===== Función para cambiar el toggle =====
 function ToggleESP()
     _G.ESP_Toggle = not _G.ESP_Toggle
-    for _, highlight in pairs(ESPTable) do
+    for char, highlight in pairs(ESPTable) do
         highlight.Enabled = _G.ESP_Toggle
     end
 end
 
--- EJEMPLO: ToggleESP() para activar/desactivar
+-- EJEMPLO: ejecutar ToggleESP() para activar/desactivar
 -- ToggleESP()
